@@ -284,7 +284,7 @@ fun LoginContent(navController: NavHostController, modifier: Modifier = Modifier
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-
+                //Este es un comentario del dia 07/10/2026
                 Text(
                     text = "Bienvenido de Nuevo",
                     style = MaterialTheme.typography.headlineSmall,
