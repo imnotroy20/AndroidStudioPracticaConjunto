@@ -277,7 +277,7 @@ fun LoginContent(navController: NavHostController, modifier: Modifier = Modifier
                         Icon(
                             imageVector = Icons.Default.Lock,
                             contentDescription = null,
-                            tint = Color(0xFFD32F2F), // Ícono del candado en rojo
+                            tint = Color(0xFFD32F2F), // icono del candado rojo
                             modifier = Modifier.size(36.dp)
                         )
                     }
@@ -293,7 +293,7 @@ fun LoginContent(navController: NavHostController, modifier: Modifier = Modifier
                 )
 
                 Text(
-                    text = "Ingresa tus credenciales para continuar",
+                    text = "Ingresa tus credenciales",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
