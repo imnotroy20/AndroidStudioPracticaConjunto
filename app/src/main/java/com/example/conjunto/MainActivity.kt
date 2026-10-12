@@ -137,7 +137,7 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
             Producto("Jugo de Naranja 1L", 35.5, "Bebidas")
         )
     }
-
+//comentario
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: "MenuContent"
 
