@@ -1,5 +1,5 @@
 package com.example.conjunto
-
+ 
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -19,7 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-
+ 
 import androidx.compose.foundation.shape.CircleShape //forma para el circulo
 import androidx.compose.foundation.shape.RoundedCornerShape //forma con esquinas redondeadas
 import androidx.compose.material.icons.Icons //catalogo principal de iconos
@@ -82,17 +82,17 @@ import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import com.example.conjunto.ui.theme.ConjuntoTheme
-
+ 
 val fuenteUnageo = FontFamily(Font(R.font.unageo_bold))//font
 val fuenteAlienTrial = FontFamily(Font(R.font.alientrial))//font
-
+ 
 val fuenteAccid = FontFamily(Font(R.font.accid))//font
 val fuenteMaxi = FontFamily(Font(R.font.maxi))//font
-
-
+ 
+ 
 // data class para representar el producto q es la compartida entre pantallas
 data class Producto(val nombreProducto: String, val precio: Double, val categoria: String)
-
+ 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -106,14 +106,14 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
+ 
 @Composable
 fun AppContent(modifier: Modifier = Modifier) {
     if (LocalNavigationEventDispatcherOwner.current == null) {
         val dispatcherOwner = remember {
             object : NavigationEventDispatcherOwner {
                 override val navigationEventDispatcher = NavigationEventDispatcher()
-
+ 
             }
         }
         CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides dispatcherOwner) {
@@ -123,12 +123,15 @@ fun AppContent(modifier: Modifier = Modifier) {
         AppContentBody(modifier = modifier)
     }
 }
-
+ 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AppContentBody(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
-
+ 
+    // guarda el tipo de usuario que inicio sesion (Gerente o Empleado)
+    var tipoUsuario by remember { mutableStateOf("") }
+ 
     // lista de los productos compartida entre el formulario y la lista
     val productos = remember {
         mutableStateListOf(
@@ -137,13 +140,13 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
             Producto("Jugo de Naranja 1L", 35.5, "Bebidas")
         )
     }
-
+ 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route ?: "MenuContent"
-
+    val currentRoute = navBackStackEntry?.destination?.route ?: "LoginContent"
+ 
     // este oculta la barra de pestañas inferiores cuando se esta en el login
     val showBottomBar = currentRoute != "LoginContent"
-
+ 
     val topBarTitle = when (currentRoute) {
         "LoginContent" -> "Inicio de Sesión"
         "MenuContent" -> "Menú Principal"
@@ -151,7 +154,7 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
         "ListaProductosContent" -> "Catálogo de Productos"
         else -> "Conjunto"
     }
-
+ 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -163,9 +166,9 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
                         style = MaterialTheme.typography.titleLarge,
                         color = Color(0xFF0D3EA1), //Titulos les cambie el color
                         fontFamily = fuenteUnageo
-
+ 
 //Titulo de arriba
-
+ 
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -175,13 +178,13 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
             )
         },
         bottomBar = {
-
-
+ 
+ 
             if (showBottomBar) {
                 NavigationBar(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer
                 ) {
-
+ 
                     //menu
                     NavigationBarItem(
                         selected = currentRoute == "MenuContent",
@@ -195,19 +198,21 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
                         icon = { Icon(Icons.Default.Menu, contentDescription = "Menú") },
                         label = { Text("Menú") }
                     )
-                    //formulario
-
-                    NavigationBarItem(
-                        selected = currentRoute == "FormularioProductosContent",
-                        onClick = {
-                            if (currentRoute != "FormularioProductosContent") {
-                                navController.navigate("FormularioProductosContent")
-                            }
-                        },
-                        icon = { Icon(Icons.Default.Add, contentDescription = "Formulario") },
-                        label = { Text("Formulario") }
-                    )
-
+                    //formulario (solo lo ve el gerente)
+ 
+                    if (tipoUsuario == "Gerente") {
+                        NavigationBarItem(
+                            selected = currentRoute == "FormularioProductosContent",
+                            onClick = {
+                                if (currentRoute != "FormularioProductosContent") {
+                                    navController.navigate("FormularioProductosContent")
+                                }
+                            },
+                            icon = { Icon(Icons.Default.Add, contentDescription = "Formulario") },
+                            label = { Text("Formulario") }
+                        )
+                    }
+ 
                     //lista
                     NavigationBarItem(
                         selected = currentRoute == "ListaProductosContent",
@@ -222,42 +227,46 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
                 }
             }
         }
-
+ 
     ) { innerPadding ->
-
+ 
         //union de las pestanas
         NavHost(
             navController = navController,
-            startDestination = "MenuContent",
+            startDestination = "LoginContent",
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable("LoginContent") { LoginContent(navController) }
-            composable("MenuContent") { MenuContent(navController = navController, productos = productos) }
+            composable("LoginContent") { LoginContent(navController, onLoginExitoso = { tipoUsuario = it }) }
+            composable("MenuContent") { MenuContent(navController = navController, productos = productos, esGerente = tipoUsuario == "Gerente") }
             composable("FormularioProductosContent") {
                 FormularioProductosContent(navController, productos)
             }
             composable("ListaProductosContent") {
-                ListaProductosContent(navController, productos)
+                ListaProductosContent(navController, productos, esGerente = tipoUsuario == "Gerente")
             }
         }
     }
 }
-
+ 
 // pantalla del inicio de sesion
-
+ 
 @Composable
-fun LoginContent(navController: NavHostController, modifier: Modifier = Modifier) {
+fun LoginContent(
+    navController: NavHostController,
+    modifier: Modifier = Modifier,
+    onLoginExitoso: (String) -> Unit = {}
+) {
     val context = LocalContext.current
     var usuario: String by remember { mutableStateOf("") }
     var contrasena: String by remember { mutableStateOf("") }
-
+ 
     Box(
         modifier = modifier
             .fillMaxSize()
             .padding(24.dp),
         contentAlignment = Alignment.Center
     )
-
+ 
     {
         ElevatedCard(
             modifier = Modifier.fillMaxWidth(),
@@ -282,7 +291,7 @@ fun LoginContent(navController: NavHostController, modifier: Modifier = Modifier
                         )
                     }
                 }
-
+ 
                 Spacer(modifier = Modifier.height(16.dp))
                 //Este es un comentario del dia 07/10/2026
                 Text(
@@ -291,15 +300,15 @@ fun LoginContent(navController: NavHostController, modifier: Modifier = Modifier
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-
+ 
                 Text(
                     text = "Ingresa tus credenciales",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-
+ 
                 Spacer(modifier = Modifier.height(28.dp))
-
+ 
                 OutlinedTextField(
                     value = usuario,
                     onValueChange = { usuario = it },
@@ -312,9 +321,9 @@ fun LoginContent(navController: NavHostController, modifier: Modifier = Modifier
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
-
+ 
                 Spacer(modifier = Modifier.height(16.dp))
-
+ 
                 OutlinedTextField(
                     value = contrasena,
                     onValueChange = { contrasena = it },
@@ -328,30 +337,39 @@ fun LoginContent(navController: NavHostController, modifier: Modifier = Modifier
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
-
+ 
                 Spacer(modifier = Modifier.height(28.dp))
-
+ 
                 Button(
                     onClick = {
-                        if (usuario.isNotBlank()) {
-                            Toast.makeText(context, "¡Bienvenido, $usuario!", Toast.LENGTH_SHORT).show()
+                        // usuarios de prueba: gerente / 1234 y empleado / 1234
+                        val tipo = when {
+                            usuario == "gerente" && contrasena == "1234" -> "Gerente"
+                            usuario == "empleado" && contrasena == "1234" -> "Empleado"
+                            else -> null
                         }
-                        navController.navigate("MenuContent") {
-                            popUpTo("LoginContent") { inclusive = true }
+                        if (tipo != null) {
+                            onLoginExitoso(tipo)
+                            Toast.makeText(context, "¡Bienvenido, $usuario!", Toast.LENGTH_SHORT).show()
+                            navController.navigate("MenuContent") {
+                                popUpTo("LoginContent") { inclusive = true }
+                            }
+                        } else {
+                            Toast.makeText(context, "Usuario o contraseña incorrectos", Toast.LENGTH_SHORT).show()
                         }
                     },
-
+ 
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF03A9F4), // boton de iniciar sesion verde
                         contentColor = Color.White
-
+ 
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp)
                 )
-
+ 
                 {
                     Text("Iniciar Sesión", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
@@ -359,17 +377,18 @@ fun LoginContent(navController: NavHostController, modifier: Modifier = Modifier
         }
     }
 }
-
+ 
 // Pantalla Menu
-
+ 
 @Composable
 fun MenuContent(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    productos: MutableList<Producto> = mutableStateListOf()
+    productos: MutableList<Producto> = mutableStateListOf(),
+    esGerente: Boolean = false
 ) {
     val totalValor = productos.sumOf { it.precio }
-
+ 
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -386,7 +405,7 @@ fun MenuContent(
                 Color(0xFF1565C0)
             ),
             elevation = CardDefaults.elevatedCardElevation(defaultElevation = 16.dp) //sombra ligera por efectp de la luz
-
+ 
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(
@@ -395,7 +414,7 @@ fun MenuContent(
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontFamily = fuenteAccid
-
+ 
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(
@@ -435,44 +454,46 @@ fun MenuContent(
                 }
             }
         }
-
+ 
         Spacer(modifier = Modifier.height(24.dp))
-
-        // tarjeta opción 1 formulario
-        ElevatedCard(
-            onClick = { navController.navigate("FormularioProductosContent") },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                verticalAlignment = Alignment.CenterVertically
+ 
+        // tarjeta opción 1 formulario (solo la ve el gerente)
+        if (esGerente) {
+            ElevatedCard(
+                onClick = { navController.navigate("FormularioProductosContent") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Formulario de Productos",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Registra y añade un nuevo artículo",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Formulario de Productos",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Registra y añade un nuevo artículo",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.outline
                     )
                 }
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.outline
-                )
             }
+ 
+            Spacer(modifier = Modifier.height(16.dp))
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
+ 
         // Tarjeta Opción 2: Lista
         ElevatedCard(
             onClick = { navController.navigate("ListaProductosContent") },
@@ -505,9 +526,9 @@ fun MenuContent(
                 )
             }
         }
-
+ 
         Spacer(modifier = Modifier.height(28.dp))
-
+ 
         // botón cerrar sesión
         OutlinedCard(
             onClick = {
@@ -541,7 +562,7 @@ fun MenuContent(
         }
     }
 }
-
+ 
 // 3 formulario
 @Composable
 fun FormularioProductosContent(
@@ -553,7 +574,7 @@ fun FormularioProductosContent(
     var nombreProducto: String by remember { mutableStateOf("") }
     var precio: String by remember { mutableStateOf("") }
     var categoria: String by remember { mutableStateOf("") }
-
+ 
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -572,9 +593,9 @@ fun FormularioProductosContent(
             Spacer(modifier = Modifier.width(8.dp))
             Text("Regresar al Menú")
         }
-
+ 
         Spacer(modifier = Modifier.height(16.dp))
-
+ 
         ElevatedCard(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
@@ -592,9 +613,9 @@ fun FormularioProductosContent(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-
+ 
                 Spacer(modifier = Modifier.height(20.dp))
-
+ 
                 OutlinedTextField(
                     value = nombreProducto,
                     onValueChange = { nombreProducto = it },
@@ -604,9 +625,9 @@ fun FormularioProductosContent(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
-
+ 
                 Spacer(modifier = Modifier.height(14.dp))
-
+ 
                 OutlinedTextField(
                     value = precio,
                     onValueChange = { precio = it },
@@ -616,9 +637,9 @@ fun FormularioProductosContent(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
-
+ 
                 Spacer(modifier = Modifier.height(14.dp))
-
+ 
                 OutlinedTextField(
                     value = categoria,
                     onValueChange = { categoria = it },
@@ -628,16 +649,16 @@ fun FormularioProductosContent(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
-
+ 
                 Spacer(modifier = Modifier.height(28.dp))
-
+ 
                 Button(
                     onClick = {
                         if (nombreProducto.isNotBlank()) {
                             val nuevoNombre = nombreProducto.trim()
                             val nuevoPrecio = precio.toDoubleOrNull() ?: 0.0
                             val nuevaCat = categoria.ifBlank { "General" }.trim()
-
+ 
                             productos.add(
                                 Producto(
                                     nombreProducto = nuevoNombre,
@@ -653,7 +674,7 @@ fun FormularioProductosContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
-
+ 
                 ) {
                     Icon(Icons.Default.Check, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
@@ -663,22 +684,23 @@ fun FormularioProductosContent(
         }
     }
 }
-
+ 
 // pantalla 4 lista con la busqueda y filtrado
 @Composable
 fun ListaProductosContent(
     navController: NavHostController,
     productos: MutableList<Producto>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    esGerente: Boolean = false
 ) {
     val context = LocalContext.current
     var busqueda: String by remember { mutableStateOf("") }
-
+ 
     val productosFiltrados = productos.filter { producto ->
         producto.nombreProducto.contains(busqueda, ignoreCase = true) ||
                 producto.categoria.contains(busqueda, ignoreCase = true)
     }
-
+ 
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -701,7 +723,7 @@ fun ListaProductosContent(
                 Spacer(modifier = Modifier.width(6.dp))
                 Text("Menú")
             }
-
+ 
             Surface(
                 color = MaterialTheme.colorScheme.primaryContainer,
                 shape = RoundedCornerShape(16.dp)
@@ -715,9 +737,9 @@ fun ListaProductosContent(
                 )
             }
         }
-
+ 
         Spacer(modifier = Modifier.height(14.dp))
-
+ 
         // Campo de Búsqueda
         OutlinedTextField(
             value = busqueda,
@@ -737,9 +759,9 @@ fun ListaProductosContent(
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
-
+ 
         Spacer(modifier = Modifier.height(14.dp))
-
+ 
         if (productosFiltrados.isEmpty()) {
             Box(
                 modifier = Modifier
@@ -793,9 +815,9 @@ fun ListaProductosContent(
                                     )
                                 }
                             }
-
+ 
                             Spacer(modifier = Modifier.width(14.dp))
-
+ 
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = producto.nombreProducto,
@@ -826,25 +848,28 @@ fun ListaProductosContent(
                                     )
                                 }
                             }
-
-                            IconButton(
-                                onClick = {
-                                    productos.remove(producto)
-                                    Toast.makeText(context, "Producto eliminado", Toast.LENGTH_SHORT).show()
-                                },
-                                modifier = Modifier
-                                    .background(
-                                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
-                                        shape = CircleShape
+ 
+                            // el boton de eliminar solo lo ve el gerente
+                            if (esGerente) {
+                                IconButton(
+                                    onClick = {
+                                        productos.remove(producto)
+                                        Toast.makeText(context, "Producto eliminado", Toast.LENGTH_SHORT).show()
+                                    },
+                                    modifier = Modifier
+                                        .background(
+                                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                                            shape = CircleShape
+                                        )
+                                        .size(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Eliminar ${producto.nombreProducto}",
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(20.dp)
                                     )
-                                    .size(36.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Eliminar ${producto.nombreProducto}",
-                                    tint = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.size(20.dp)
-                                )
+                                }
                             }
                         }
                     }
@@ -853,9 +878,9 @@ fun ListaProductosContent(
         }
     }
 }
-
+ 
 // Previews individuales y generales
-
+ 
 @Preview(name = "1. Login", showBackground = true)
 @Composable
 fun LoginContentPreview() {
@@ -870,7 +895,7 @@ fun LoginContentPreview() {
         }
     }
 }
-
+ 
 @Preview(name = "2. Menú", showBackground = true)
 @Composable
 fun MenuContentPreview() {
@@ -885,7 +910,7 @@ fun MenuContentPreview() {
         }
     }
 }
-
+ 
 @Preview(name = "3. Formulario", showBackground = true)
 @Composable
 fun FormularioContentPreview() {
@@ -905,7 +930,7 @@ fun FormularioContentPreview() {
         }
     }
 }
-
+ 
 @Preview(name = "4. Lista", showBackground = true)
 @Composable
 fun ListaContentPreview() {
@@ -926,7 +951,7 @@ fun ListaContentPreview() {
         }
     }
 }
-
+ 
 @Preview(name = "5. App Completa", showBackground = true)
 @Composable
 fun AppContentPreview() {
@@ -934,3 +959,4 @@ fun AppContentPreview() {
         AppContent()
     }
 }
+ 
