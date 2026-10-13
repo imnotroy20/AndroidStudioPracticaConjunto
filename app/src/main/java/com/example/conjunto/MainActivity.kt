@@ -93,6 +93,13 @@ val fuenteMaxi = FontFamily(Font(R.font.maxi))//font
 // data class para representar el producto q es la compartida entre pantallas
 data class Producto(val nombreProducto: String, val precio: Double, val categoria: String)
 
+// data class para representar el empleado
+data class Empleado(val nombre: String, val puesto: String, val sueldo: Double)
+
+// data class para representar sucursales y proveedores
+data class Sucursal(val nombreSucursal: String, val direccion: String, val telefono: String)
+data class Proveedor(val nombreProveedor: String, val contacto: String, val categoria: String)
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -137,6 +144,29 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
             Producto("Jugo de Naranja 1L", 35.5, "Bebidas")
         )
     }
+
+    // lista de los empleados compartida
+    val empleados = remember {
+        mutableStateListOf(
+            Empleado("Juan Pérez", "Gerente", 15000.0),
+            Empleado("María López", "Vendedora", 8500.0)
+        )
+    }
+
+    // listas compartidas de sucursales y proveedores
+    val sucursales = remember {
+        mutableStateListOf(
+            Sucursal("Sucursal Centro", "Av. Principal #123", "555-1234"),
+            Sucursal("Sucursal Norte", "Blvd. Norte #456", "555-5678")
+        )
+    }
+
+    val proveedores = remember {
+        mutableStateListOf(
+            Proveedor("Distribuidora Bimbo", "Carlos Ruiz", "Alimentos"),
+            Proveedor("Sabritas S.A.", "Ana Gómez", "Snacks")
+        )
+    }
 //comentario
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: "MenuContent"
@@ -149,6 +179,12 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
         "MenuContent" -> "Menú Principal"
         "FormularioProductosContent" -> "Nuevo Producto"
         "ListaProductosContent" -> "Catálogo de Productos"
+        "FormularioEmpleadosContent" -> "Registro de Empleado"
+        "EmpleadosContent" -> "Catálogo de Empleados"
+        "FormularioSucursalesContent" -> "Registro de Sucursal"
+        "SucursalesContent" -> "Catálogo de Sucursales"
+        "FormularioProveedoresContent" -> "Registro de Proveedor"
+        "ProveedoresContent" -> "Catálogo de Proveedores"
         else -> "Conjunto"
     }
 
@@ -178,9 +214,32 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
 
 
             if (showBottomBar) {
+                //empleados
                 NavigationBar(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer
                 ) {
+                    NavigationBarItem(
+                        selected = currentRoute == "EmpleadosContent",
+                        onClick = {
+                            if (currentRoute != "EmpleadosContent") {
+                                navController.navigate("EmpleadosContent")
+                            }
+                        },
+                        icon = { Icon(Icons.Default.Person, contentDescription = "Empleados") },
+                        label = { Text("Empleados") }
+                    )
+
+                    //sucursales
+                    NavigationBarItem(
+                        selected = currentRoute == "SucursalesContent",
+                        onClick = {
+                            if (currentRoute != "SucursalesContent") {
+                                navController.navigate("SucursalesContent")
+                            }
+                        },
+                        icon = { Icon(Icons.Default.Menu, contentDescription = "Sucursales") },
+                        label = { Text("Sucursales") }
+                    )
 
                     //menu
                     NavigationBarItem(
@@ -192,20 +251,20 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
                                 }
                             }
                         },
-                        icon = { Icon(Icons.Default.Menu, contentDescription = "Menú") },
-                        label = { Text("Menú") }
+                        icon = { Icon(Icons.Default.Add, contentDescription = "Añadir") },
+                        label = { Text("Añadir") }
                     )
-                    //formulario
 
+                    //proveedores
                     NavigationBarItem(
-                        selected = currentRoute == "FormularioProductosContent",
+                        selected = currentRoute == "ProveedoresContent",
                         onClick = {
-                            if (currentRoute != "FormularioProductosContent") {
-                                navController.navigate("FormularioProductosContent")
+                            if (currentRoute != "ProveedoresContent") {
+                                navController.navigate("ProveedoresContent")
                             }
                         },
-                        icon = { Icon(Icons.Default.Add, contentDescription = "Formulario") },
-                        label = { Text("Formulario") }
+                        icon = { Icon(Icons.Default.ShoppingCart, contentDescription = "Proveedores") },
+                        label = { Text("Proveedores") }
                     )
 
                     //lista
@@ -238,6 +297,24 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
             }
             composable("ListaProductosContent") {
                 ListaProductosContent(navController, productos)
+            }
+            composable("FormularioEmpleadosContent") {
+                FormularioEmpleadosContent(navController, empleados)
+            }
+            composable("EmpleadosContent") {
+                EmpleadosContent(navController, empleados)
+            }
+            composable("SucursalesContent") {
+                SucursalesContent(navController, sucursales)
+            }
+            composable("FormularioSucursalesContent") {
+                FormularioSucursalesContent(navController, sucursales)
+            }
+            composable("ProveedoresContent") {
+                ProveedoresContent(navController, proveedores)
+            }
+            composable("FormularioProveedoresContent") {
+                FormularioProveedoresContent(navController, proveedores)
             }
         }
     }
@@ -285,6 +362,7 @@ fun LoginContent(navController: NavHostController, modifier: Modifier = Modifier
 
                 Spacer(modifier = Modifier.height(16.dp))
                 //Este es un comentario del dia 07/10/2026
+                //Comentario por: Santiago Hernandez 13/10/2026
                 Text(
                     text = "Bienvenido de Nuevo",
                     style = MaterialTheme.typography.headlineSmall,
@@ -473,9 +551,9 @@ fun MenuContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Tarjeta Opción 2: Lista
+        // Tarjeta Opción Empleados Formulario
         ElevatedCard(
-            onClick = { navController.navigate("ListaProductosContent") },
+            onClick = { navController.navigate("FormularioEmpleadosContent") },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
@@ -507,7 +585,7 @@ fun MenuContent(
         }
         Spacer(modifier = Modifier.height(16.dp))
         ElevatedCard(
-            onClick = { navController.navigate("FormularioProductosContent") },
+            onClick = { navController.navigate("FormularioSucursalesContent") },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
@@ -539,7 +617,7 @@ fun MenuContent(
         }
         Spacer(modifier = Modifier.height(16.dp))
         ElevatedCard(
-            onClick = { navController.navigate("FormularioProductosContent") },
+            onClick = { navController.navigate("FormularioProveedoresContent") },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
@@ -780,6 +858,7 @@ fun ListaProductosContent(
             }
         }
 
+
         Spacer(modifier = Modifier.height(14.dp))
 
         // Campo de Búsqueda
@@ -912,6 +991,906 @@ fun ListaProductosContent(
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun EmpleadosContent(
+    navController: NavHostController,
+    empleados: MutableList<Empleado>,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    var busqueda: String by remember { mutableStateOf("") }
+
+    val empleadosFiltrados = empleados.filter { emp ->
+        emp.nombre.contains(busqueda, ignoreCase = true) ||
+                emp.puesto.contains(busqueda, ignoreCase = true)
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedButton(
+                onClick = { navController.navigate("MenuContent") },
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Menú")
+            }
+
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text(
+                    text = "${empleadosFiltrados.size} de ${empleados.size} empleados",
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // Campo de Búsqueda
+        OutlinedTextField(
+            value = busqueda,
+            onValueChange = { busqueda = it },
+            placeholder = { Text("Buscar empleado por nombre o puesto...") },
+            leadingIcon = {
+                Icon(Icons.Default.Search, contentDescription = null)
+            },
+            trailingIcon = {
+                if (busqueda.isNotEmpty()) {
+                    IconButton(onClick = { busqueda = "" }) {
+                        Icon(Icons.Default.Clear, contentDescription = null)
+                    }
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        if (empleadosFiltrados.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.size(64.dp)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = if (busqueda.isEmpty()) "No hay empleados registrados" else "No se encontraron coincidencias",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(empleadosFiltrados) { emp ->
+                    ElevatedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.tertiaryContainer,
+                                modifier = Modifier.size(44.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = emp.nombre.take(1).uppercase(),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 18.sp,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(14.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = emp.nombre,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        shape = RoundedCornerShape(6.dp)
+                                    ) {
+                                        Text(
+                                            text = emp.puesto,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Text(
+                                        text = "$${"%.2f".format(emp.sueldo)}",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    empleados.remove(emp)
+                                    Toast.makeText(context, "Empleado eliminado", Toast.LENGTH_SHORT).show()
+                                },
+                                modifier = Modifier
+                                    .background(
+                                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                                        shape = CircleShape
+                                    )
+                                    .size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Eliminar ${emp.nombre}",
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FormularioEmpleadosContent(
+    navController: NavHostController,
+    empleados: MutableList<Empleado>,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    var nombreEmpleado: String by remember { mutableStateOf("") }
+    var puesto: String by remember { mutableStateOf("") }
+    var sueldo: String by remember { mutableStateOf("") }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(20.dp),
+        verticalArrangement = Arrangement.Top
+    ) {
+        OutlinedButton(
+            onClick = { navController.navigate("MenuContent") },
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Regresar al Menú")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text(
+                    text = "Registro de Empleado",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Completa los campos para registrar un nuevo empleado",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                OutlinedTextField(
+                    value = nombreEmpleado,
+                    onValueChange = { nombreEmpleado = it },
+                    label = { Text("Nombre del Empleado") },
+                    placeholder = { Text("Ej. Juan Pérez") },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                OutlinedTextField(
+                    value = puesto,
+                    onValueChange = { puesto = it },
+                    label = { Text("Puesto") },
+                    placeholder = { Text("Ej. Gerente, Vendedor") },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                OutlinedTextField(
+                    value = sueldo,
+                    onValueChange = { sueldo = it },
+                    label = { Text("Sueldo ($)") },
+                    placeholder = { Text("Ej. 12000.00") },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(28.dp))
+
+                Button(
+                    onClick = {
+                        if (nombreEmpleado.isNotBlank()) {
+                            val nuevoNombre = nombreEmpleado.trim()
+                            val nuevoPuesto = puesto.ifBlank { "General" }.trim()
+                            val nuevoSueldo = sueldo.toDoubleOrNull() ?: 0.0
+
+                            empleados.add(
+                                Empleado(
+                                    nombre = nuevoNombre,
+                                    puesto = nuevoPuesto,
+                                    sueldo = nuevoSueldo
+                                )
+                            )
+                            Toast.makeText(context, "Empleado '$nuevoNombre' guardado", Toast.LENGTH_SHORT).show()
+                        }
+                        navController.navigate("MenuContent")
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                ) {
+                    Icon(Icons.Default.Check, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Guardar Empleado", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+
+
+@Composable
+fun SucursalesContent(
+    navController: NavHostController,
+    sucursales: MutableList<Sucursal>,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    var busqueda: String by remember { mutableStateOf("") }
+
+    val sucursalesFiltradas = sucursales.filter { suc ->
+        suc.nombreSucursal.contains(busqueda, ignoreCase = true) ||
+                suc.direccion.contains(busqueda, ignoreCase = true)
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedButton(
+                onClick = { navController.navigate("MenuContent") },
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Menú")
+            }
+
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text(
+                    text = "${sucursalesFiltradas.size} de ${sucursales.size} sucursales",
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        OutlinedTextField(
+            value = busqueda,
+            onValueChange = { busqueda = it },
+            placeholder = { Text("Buscar sucursal por nombre o dirección...") },
+            leadingIcon = {
+                Icon(Icons.Default.Search, contentDescription = null)
+            },
+            trailingIcon = {
+                if (busqueda.isNotEmpty()) {
+                    IconButton(onClick = { busqueda = "" }) {
+                        Icon(Icons.Default.Clear, contentDescription = null)
+                    }
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        if (sucursalesFiltradas.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (busqueda.isEmpty()) "No hay sucursales registradas" else "No se encontraron coincidencias",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(sucursalesFiltradas) { suc ->
+                    ElevatedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.tertiaryContainer,
+                                modifier = Modifier.size(44.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = suc.nombreSucursal.take(1).uppercase(),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 18.sp,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(14.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = suc.nombreSucursal,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = suc.direccion,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Tel: ${suc.telefono}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    sucursales.remove(suc)
+                                    Toast.makeText(context, "Sucursal eliminada", Toast.LENGTH_SHORT).show()
+                                },
+                                modifier = Modifier
+                                    .background(
+                                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                                        shape = CircleShape
+                                    )
+                                    .size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Eliminar ${suc.nombreSucursal}",
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FormularioSucursalesContent(
+    navController: NavHostController,
+    sucursales: MutableList<Sucursal>,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    var nombreSucursal: String by remember { mutableStateOf("") }
+    var direccion: String by remember { mutableStateOf("") }
+    var telefono: String by remember { mutableStateOf("") }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(20.dp),
+        verticalArrangement = Arrangement.Top
+    ) {
+        OutlinedButton(
+            onClick = { navController.navigate("MenuContent") },
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Regresar al Menú")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text(
+                    text = "Registro de Sucursal",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Completa los campos para registrar una nueva sucursal",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                OutlinedTextField(
+                    value = nombreSucursal,
+                    onValueChange = { nombreSucursal = it },
+                    label = { Text("Nombre de la Sucursal") },
+                    placeholder = { Text("Ej. Sucursal Sur") },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                OutlinedTextField(
+                    value = direccion,
+                    onValueChange = { direccion = it },
+                    label = { Text("Dirección") },
+                    placeholder = { Text("Ej. Av. Juárez #500") },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                OutlinedTextField(
+                    value = telefono,
+                    onValueChange = { telefono = it },
+                    label = { Text("Teléfono") },
+                    placeholder = { Text("Ej. 555-9876") },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(28.dp))
+
+                Button(
+                    onClick = {
+                        if (nombreSucursal.isNotBlank()) {
+                            val nuevoNombre = nombreSucursal.trim()
+                            val nuevaDir = direccion.ifBlank { "Sin dirección" }.trim()
+                            val nuevoTel = telefono.ifBlank { "Sin teléfono" }.trim()
+
+                            sucursales.add(
+                                Sucursal(
+                                    nombreSucursal = nuevoNombre,
+                                    direccion = nuevaDir,
+                                    telefono = nuevoTel
+                                )
+                            )
+                            Toast.makeText(context, "Sucursal '$nuevoNombre' guardada", Toast.LENGTH_SHORT).show()
+                        }
+                        navController.navigate("MenuContent")
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                ) {
+                    Icon(Icons.Default.Check, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Guardar Sucursal", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ProveedoresContent(
+    navController: NavHostController,
+    proveedores: MutableList<Proveedor>,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    var busqueda: String by remember { mutableStateOf("") }
+
+    val proveedoresFiltrados = proveedores.filter { prov ->
+        prov.nombreProveedor.contains(busqueda, ignoreCase = true) ||
+                prov.categoria.contains(busqueda, ignoreCase = true)
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedButton(
+                onClick = { navController.navigate("MenuContent") },
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Menú")
+            }
+
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text(
+                    text = "${proveedoresFiltrados.size} de ${proveedores.size} proveedores",
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        OutlinedTextField(
+            value = busqueda,
+            onValueChange = { busqueda = it },
+            placeholder = { Text("Buscar proveedor por nombre o categoría...") },
+            leadingIcon = {
+                Icon(Icons.Default.Search, contentDescription = null)
+            },
+            trailingIcon = {
+                if (busqueda.isNotEmpty()) {
+                    IconButton(onClick = { busqueda = "" }) {
+                        Icon(Icons.Default.Clear, contentDescription = null)
+                    }
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        if (proveedoresFiltrados.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (busqueda.isEmpty()) "No hay proveedores registrados" else "No se encontraron coincidencias",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(proveedoresFiltrados) { prov ->
+                    ElevatedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.tertiaryContainer,
+                                modifier = Modifier.size(44.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = prov.nombreProveedor.take(1).uppercase(),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 18.sp,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(14.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = prov.nombreProveedor,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        shape = RoundedCornerShape(6.dp)
+                                    ) {
+                                        Text(
+                                            text = prov.categoria,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Text(
+                                        text = "Contacto: ${prov.contacto}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    proveedores.remove(prov)
+                                    Toast.makeText(context, "Proveedor eliminado", Toast.LENGTH_SHORT).show()
+                                },
+                                modifier = Modifier
+                                    .background(
+                                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                                        shape = CircleShape
+                                    )
+                                    .size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Eliminar ${prov.nombreProveedor}",
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FormularioProveedoresContent(
+    navController: NavHostController,
+    proveedores: MutableList<Proveedor>,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    var nombreProveedor: String by remember { mutableStateOf("") }
+    var contacto: String by remember { mutableStateOf("") }
+    var categoria: String by remember { mutableStateOf("") }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(20.dp),
+        verticalArrangement = Arrangement.Top
+    ) {
+        OutlinedButton(
+            onClick = { navController.navigate("MenuContent") },
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Regresar al Menú")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text(
+                    text = "Registro de Proveedor",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Completa los campos para registrar un nuevo proveedor",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                OutlinedTextField(
+                    value = nombreProveedor,
+                    onValueChange = { nombreProveedor = it },
+                    label = { Text("Nombre del Proveedor") },
+                    placeholder = { Text("Ej. Bimbo") },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                OutlinedTextField(
+                    value = contacto,
+                    onValueChange = { contacto = it },
+                    label = { Text("Contacto") },
+                    placeholder = { Text("Ej. Juan Pérez") },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                OutlinedTextField(
+                    value = categoria,
+                    onValueChange = { categoria = it },
+                    label = { Text("Categoría / Producto") },
+                    placeholder = { Text("Ej. Alimentos, Lácteos") },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(28.dp))
+
+                Button(
+                    onClick = {
+                        if (nombreProveedor.isNotBlank()) {
+                            val nuevoNombre = nombreProveedor.trim()
+                            val nuevoContacto = contacto.ifBlank { "Sin contacto" }.trim()
+                            val nuevaCat = categoria.ifBlank { "General" }.trim()
+
+                            proveedores.add(
+                                Proveedor(
+                                    nombreProveedor = nuevoNombre,
+                                    contacto = nuevoContacto,
+                                    categoria = nuevaCat
+                                )
+                            )
+                            Toast.makeText(context, "Proveedor '$nuevoNombre' guardado", Toast.LENGTH_SHORT).show()
+                        }
+                        navController.navigate("MenuContent")
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                ) {
+                    Icon(Icons.Default.Check, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Guardar Proveedor", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
