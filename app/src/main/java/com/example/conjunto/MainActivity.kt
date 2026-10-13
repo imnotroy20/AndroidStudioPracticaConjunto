@@ -168,6 +168,8 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
         )
     }
 //comentario
+    
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: "MenuContent"
 
@@ -321,7 +323,8 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
 }
 
 // pantalla del inicio de sesion
-
+// Enrique Ruiz Comentario 13/10/26
+// Comentario de Comish Practica 4 Roy
 @Composable
 fun LoginContent(navController: NavHostController, modifier: Modifier = Modifier) {
     val context = LocalContext.current
