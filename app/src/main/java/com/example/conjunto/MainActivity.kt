@@ -244,7 +244,7 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
 }
 
 // pantalla del inicio de sesion
-
+// Enrique Ruiz Comentario 13/10/26
 @Composable
 fun LoginContent(navController: NavHostController, modifier: Modifier = Modifier) {
     val context = LocalContext.current
