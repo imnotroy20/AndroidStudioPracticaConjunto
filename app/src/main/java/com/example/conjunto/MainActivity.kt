@@ -40,9 +40,13 @@ import androidx.compose.material3.Button //botn principal estandarizado
 import androidx.compose.material3.ButtonDefaults // es el q nos permite personalizar colores y estilos del boton
 import androidx.compose.material3.CardDefaults //permite personalizar elevaciones y los colores de tarjetas
 import androidx.compose.material3.CenterAlignedTopAppBar //barra de titulo de arriba centrada
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard //la tarjeta con sombra y elevacion 3D
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon //componente para dibujar iconos
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.IconButton //boton interactivo contenedor de los iconos
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -91,10 +95,20 @@ val fuenteMaxi = FontFamily(Font(R.font.maxi))//font
 
 
 // data class para representar el producto q es la compartida entre pantallas
-data class Producto(val nombreProducto: String, val precio: Double, val categoria: String)
+data class Producto(
+    val nombreProducto: String,
+    val precio: Double,
+    val categoria: String,
+    val proveedor: String = ""
+)
 
 // data class para representar el empleado
-data class Empleado(val nombre: String, val puesto: String, val sueldo: Double)
+data class Empleado(
+    val nombre: String,
+    val puesto: String,
+    val sueldo: Double,
+    val sucursal: String = ""
+)
 
 // data class para representar sucursales y proveedores
 data class Sucursal(val nombreSucursal: String, val direccion: String, val telefono: String)
@@ -139,17 +153,17 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
     // lista de los productos compartida entre el formulario y la lista
     val productos = remember {
         mutableStateListOf(
-            Producto("Sponch Fresa", 23.0, "Galletas"),
-            Producto("Emperador Combinado", 22.0, "Galletas"),
-            Producto("Jugo de Naranja 1L", 35.5, "Bebidas")
+            Producto("Sponch Fresa", 23.0, "Galletas", "Distribuidora Bimbo"),
+            Producto("Emperador Combinado", 22.0, "Galletas", "Distribuidora Bimbo"),
+            Producto("Jugo de Naranja 1L", 35.5, "Bebidas", "Sabritas S.A.")
         )
     }
 
     // lista de los empleados compartida
     val empleados = remember {
         mutableStateListOf(
-            Empleado("Juan Pérez", "Gerente", 15000.0),
-            Empleado("María López", "Vendedora", 8500.0)
+            Empleado("Juan Pérez", "Gerente", 15000.0, "Sucursal Centro"),
+            Empleado("María López", "Vendedora", 8500.0, "Sucursal Norte")
         )
     }
 
@@ -295,13 +309,13 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
             composable("LoginContent") { LoginContent(navController) }
             composable("MenuContent") { MenuContent(navController = navController, productos = productos) }
             composable("FormularioProductosContent") {
-                FormularioProductosContent(navController, productos)
+                FormularioProductosContent(navController, productos, proveedores = proveedores)
             }
             composable("ListaProductosContent") {
                 ListaProductosContent(navController, productos)
             }
             composable("FormularioEmpleadosContent") {
-                FormularioEmpleadosContent(navController, empleados)
+                FormularioEmpleadosContent(navController, empleados, sucursales = sucursales)
             }
             composable("EmpleadosContent") {
                 EmpleadosContent(navController, empleados)
@@ -688,16 +702,22 @@ fun MenuContent(
 }
 
 // 3 formulario
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FormularioProductosContent(
     navController: NavHostController,
     productos: MutableList<Producto>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    proveedores: List<Proveedor> = emptyList()
 ) {
     val context = LocalContext.current
     var nombreProducto: String by remember { mutableStateOf("") }
     var precio: String by remember { mutableStateOf("") }
     var categoria: String by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+    var proveedorSeleccionado by remember {
+        mutableStateOf(proveedores.firstOrNull()?.nombreProveedor ?: "")
+    }
 
     Column(
         modifier = modifier
@@ -774,6 +794,51 @@ fun FormularioProductosContent(
                     singleLine = true
                 )
 
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Combo box de Proveedor
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = proveedorSeleccionado,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Proveedor") },
+                        placeholder = { Text("Selecciona un proveedor") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                            .fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        if (proveedores.isEmpty()) {
+                            DropdownMenuItem(
+                                text = { Text("No hay proveedores registrados") },
+                                onClick = { expanded = false }
+                            )
+                        } else {
+                            proveedores.forEach { prov ->
+                                DropdownMenuItem(
+                                    text = { Text(prov.nombreProveedor) },
+                                    onClick = {
+                                        proveedorSeleccionado = prov.nombreProveedor
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(28.dp))
 
                 Button(
@@ -787,7 +852,8 @@ fun FormularioProductosContent(
                                 Producto(
                                     nombreProducto = nuevoNombre,
                                     precio = nuevoPrecio,
-                                    categoria = nuevaCat
+                                    categoria = nuevaCat,
+                                    proveedor = proveedorSeleccionado
                                 )
                             )
                             Toast.makeText(context, "Producto '$nuevoNombre' guardado", Toast.LENGTH_SHORT).show()
@@ -821,7 +887,8 @@ fun ListaProductosContent(
 
     val productosFiltrados = productos.filter { producto ->
         producto.nombreProducto.contains(busqueda, ignoreCase = true) ||
-                producto.categoria.contains(busqueda, ignoreCase = true)
+                producto.categoria.contains(busqueda, ignoreCase = true) ||
+                producto.proveedor.contains(busqueda, ignoreCase = true)
     }
 
     Column(
@@ -963,6 +1030,20 @@ fun ListaProductosContent(
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                         )
                                     }
+                                    if (producto.proveedor.isNotBlank()) {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Surface(
+                                            color = MaterialTheme.colorScheme.tertiaryContainer,
+                                            shape = RoundedCornerShape(6.dp)
+                                        ) {
+                                            Text(
+                                                text = producto.proveedor,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Text(
                                         text = "$${"%.2f".format(producto.precio)}",
@@ -1011,7 +1092,8 @@ fun EmpleadosContent(
 
     val empleadosFiltrados = empleados.filter { emp ->
         emp.nombre.contains(busqueda, ignoreCase = true) ||
-                emp.puesto.contains(busqueda, ignoreCase = true)
+                emp.puesto.contains(busqueda, ignoreCase = true) ||
+                emp.sucursal.contains(busqueda, ignoreCase = true)
     }
 
     Column(
@@ -1152,6 +1234,20 @@ fun EmpleadosContent(
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                         )
                                     }
+                                    if (emp.sucursal.isNotBlank()) {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Surface(
+                                            color = MaterialTheme.colorScheme.tertiaryContainer,
+                                            shape = RoundedCornerShape(6.dp)
+                                        ) {
+                                            Text(
+                                                text = emp.sucursal,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Text(
                                         text = "$${"%.2f".format(emp.sueldo)}",
@@ -1189,16 +1285,22 @@ fun EmpleadosContent(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FormularioEmpleadosContent(
     navController: NavHostController,
     empleados: MutableList<Empleado>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    sucursales: List<Sucursal> = emptyList()
 ) {
     val context = LocalContext.current
     var nombreEmpleado: String by remember { mutableStateOf("") }
     var puesto: String by remember { mutableStateOf("") }
     var sueldo: String by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+    var sucursalSeleccionada by remember {
+        mutableStateOf(sucursales.firstOrNull()?.nombreSucursal ?: "")
+    }
 
     Column(
         modifier = modifier
@@ -1275,6 +1377,51 @@ fun FormularioEmpleadosContent(
                     singleLine = true
                 )
 
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Combo box de Sucursal
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = sucursalSeleccionada,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Sucursal") },
+                        placeholder = { Text("Selecciona una sucursal") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                            .fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        if (sucursales.isEmpty()) {
+                            DropdownMenuItem(
+                                text = { Text("No hay sucursales registradas") },
+                                onClick = { expanded = false }
+                            )
+                        } else {
+                            sucursales.forEach { suc ->
+                                DropdownMenuItem(
+                                    text = { Text(suc.nombreSucursal) },
+                                    onClick = {
+                                        sucursalSeleccionada = suc.nombreSucursal
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(28.dp))
 
                 Button(
@@ -1288,7 +1435,8 @@ fun FormularioEmpleadosContent(
                                 Empleado(
                                     nombre = nuevoNombre,
                                     puesto = nuevoPuesto,
-                                    sueldo = nuevoSueldo
+                                    sueldo = nuevoSueldo,
+                                    sucursal = sucursalSeleccionada
                                 )
                             )
                             Toast.makeText(context, "Empleado '$nuevoNombre' guardado", Toast.LENGTH_SHORT).show()
@@ -1942,12 +2090,17 @@ fun FormularioContentPreview() {
     }
     val productos = remember {
         mutableStateListOf(
-            Producto("Sponch Fresa", 23.0, "Galletas")
+            Producto("Sponch Fresa", 23.0, "Galletas", "Distribuidora Bimbo")
+        )
+    }
+    val proveedores = remember {
+        mutableStateListOf(
+            Proveedor("Distribuidora Bimbo", "Carlos Ruiz", "Alimentos")
         )
     }
     CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides dispatcherOwner) {
         ConjuntoTheme {
-            FormularioProductosContent(rememberNavController(), productos)
+            FormularioProductosContent(rememberNavController(), productos, proveedores = proveedores)
         }
     }
 }
