@@ -88,6 +88,7 @@ import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import com.example.conjunto.ui.theme.ConjuntoTheme
 
 //Pregunta de DAM
+// Pregunta 2 DAM
 
 val fuenteUnageo = FontFamily(Font(R.font.unageo_bold))//font
 val fuenteAlienTrial = FontFamily(Font(R.font.alientrial))//font
