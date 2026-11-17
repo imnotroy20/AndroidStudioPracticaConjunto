@@ -64,6 +64,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,6 +89,15 @@ import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import com.example.conjunto.ui.theme.ConjuntoTheme
 
 import android.content.Context
+import java.io.IOException
+import kotlinx.coroutines.launch
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.converter.scalars.ScalarsConverterFactory
+import retrofit2.http.Field
+import retrofit2.http.FormUrlEncoded
+import retrofit2.http.POST
 
 //Pregunta de DAM
 // Pregunta 2 DAM
@@ -380,45 +390,12 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
 // Comentario de Comish Practica 4 Roy
 
 interface ApiService {
-    @POST("iniciarSesion.php")
+    @POST("login.php")
     @FormUrlEncoded
     suspend fun iniciarSesion(
-        @Field("nombreUsuario") nombreUsuario: String,
+        @Field("usuario") usuario: String,
         @Field("contrasena") contrasena: String
     ): Response<String>
-
-    @GET("categorias.php?buscar&busqueda")
-    suspend fun buscarCategorias(): List<ModeloCategoria>
-
-
-    @POST("productos.php?registrar")
-    @FormUrlEncoded
-    suspend fun registrarProducto(
-        @Field("nombre") nombre: String,
-        @Field("precio") precio: Double,
-        @Field("categoria") categoria: Int
-    ): Response<Unit>
-
-
-    @GET("productos.php?buscar&busqueda")
-    suspend fun buscarProductos(): List<ModeloProducto>
-
-
-    @POST("productos.php?modificar")
-    @FormUrlEncoded
-    suspend fun modificarProducto(
-        @Field("id") id: Int,
-        @Field("nombre") nombre: String,
-        @Field("precio") precio: Double,
-        @Field("categoria") categoria: Int
-    ): Response<Unit>
-
-
-    @POST("productos.php?eliminar")
-    @FormUrlEncoded
-    suspend fun eliminarProducto(
-        @Field("id") id: Int
-    ): Response<Unit>
 }
 
 
@@ -435,8 +412,12 @@ val api = retrofit.create(ApiService::class.java)
 @Composable
 fun LoginContent(navController: NavHostController, modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val preferencias = remember(context) { Preferencias(context) }
+    val scope = rememberCoroutineScope()
     var usuario: String by remember { mutableStateOf("") }
     var contrasena: String by remember { mutableStateOf("") }
+    var isLoading: Boolean by remember { mutableStateOf(false) }
+    var loginError: String by remember { mutableStateOf("") }
 
     Box(
         modifier = modifier
@@ -519,16 +500,52 @@ fun LoginContent(navController: NavHostController, modifier: Modifier = Modifier
 
                 Spacer(modifier = Modifier.height(28.dp))
 
+                if (loginError.isNotEmpty()) {
+                    Text(
+                        text = loginError,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
                 Button(
                     onClick = {
-                        if (usuario.isNotBlank()) {
-                            Toast.makeText(context, "¡Bienvenido, $usuario!", Toast.LENGTH_SHORT).show()
-                        }
-                        navController.navigate("MenuContent") {
-                            popUpTo("LoginContent") { inclusive = true }
+                        if (usuario.isBlank() || contrasena.isBlank()) {
+                            loginError = "Ingresa usuario y contraseña."
+                        } else {
+                            loginError = ""
+                            isLoading = true
+                            scope.launch {
+                                try {
+                                    val response = api.iniciarSesion(usuario.trim(), contrasena)
+                                    if (!response.isSuccessful) {
+                                        loginError = if (response.code() == 401) {
+                                            "Usuario o contraseña incorrectos."
+                                        } else {
+                                            "Error del servidor (HTTP ${response.code()})."
+                                        }
+                                    } else {
+                                        val idEmpleado = response.body()?.trim().orEmpty()
+                                        if (idEmpleado.isEmpty()) {
+                                            loginError = "Usuario o contraseña incorrectos."
+                                        } else {
+                                            preferencias.guardar("id", idEmpleado)
+                                            navController.navigate("MenuContent") {
+                                                popUpTo("LoginContent") { inclusive = true }
+                                            }
+                                        }
+                                    }
+                                } catch (e: IOException) {
+                                    loginError = "No se pudo conectar con el servidor."
+                                } finally {
+                                    isLoading = false
+                                }
+                            }
                         }
                     },
 
+                    enabled = !isLoading,
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF03A9F4), // boton de iniciar sesion verde
@@ -541,7 +558,11 @@ fun LoginContent(navController: NavHostController, modifier: Modifier = Modifier
                 )
 
                 {
-                    Text("Iniciar Sesión", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        if (isLoading) "Validando..." else "Iniciar Sesión",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
         }
