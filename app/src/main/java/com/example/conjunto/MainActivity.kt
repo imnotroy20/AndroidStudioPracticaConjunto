@@ -119,6 +119,8 @@ data class Empleado(
 data class Sucursal(val nombreSucursal: String, val direccion: String, val telefono: String)
 data class Proveedor(val nombreProveedor: String, val contacto: String, val categoria: String)
 
+data class ModeloSucursales (val id_sucursal: Int,val nombre_sucursal: String, val direccion: String, val telefono: Int)
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -373,10 +375,63 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
         }
     }
 }
-
 // pantalla del inicio de sesion
 // Enrique Ruiz Comentario 13/10/26
 // Comentario de Comish Practica 4 Roy
+
+interface ApiService {
+    @POST("iniciarSesion.php")
+    @FormUrlEncoded
+    suspend fun iniciarSesion(
+        @Field("nombreUsuario") nombreUsuario: String,
+        @Field("contrasena") contrasena: String
+    ): Response<String>
+
+    @GET("categorias.php?buscar&busqueda")
+    suspend fun buscarCategorias(): List<ModeloCategoria>
+
+
+    @POST("productos.php?registrar")
+    @FormUrlEncoded
+    suspend fun registrarProducto(
+        @Field("nombre") nombre: String,
+        @Field("precio") precio: Double,
+        @Field("categoria") categoria: Int
+    ): Response<Unit>
+
+
+    @GET("productos.php?buscar&busqueda")
+    suspend fun buscarProductos(): List<ModeloProducto>
+
+
+    @POST("productos.php?modificar")
+    @FormUrlEncoded
+    suspend fun modificarProducto(
+        @Field("id") id: Int,
+        @Field("nombre") nombre: String,
+        @Field("precio") precio: Double,
+        @Field("categoria") categoria: Int
+    ): Response<Unit>
+
+
+    @POST("productos.php?eliminar")
+    @FormUrlEncoded
+    suspend fun eliminarProducto(
+        @Field("id") id: Int
+    ): Response<Unit>
+}
+
+
+val retrofit = Retrofit.Builder()
+    .baseUrl("https://monitored-pays-archive-asks.trycloudflare.com/api/")
+    .addConverterFactory(ScalarsConverterFactory.create())
+    .addConverterFactory(GsonConverterFactory.create())
+    .build()
+
+
+val api = retrofit.create(ApiService::class.java)
+
+
 @Composable
 fun LoginContent(navController: NavHostController, modifier: Modifier = Modifier) {
     val context = LocalContext.current

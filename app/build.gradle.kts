@@ -62,5 +62,5 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
 
     implementation("androidx.compose.material:material-icons-core:1.7.8")
-    // es lo que descarga físicamente el catálogo de íconos en el proyecto
+    // es lo que descarga físicamente el catálogo de íconos en el proyectoz
 }
