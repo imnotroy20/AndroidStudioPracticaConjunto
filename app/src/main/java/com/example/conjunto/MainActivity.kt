@@ -87,6 +87,8 @@ import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import com.example.conjunto.ui.theme.ConjuntoTheme
 
+import android.content.Context
+
 //Pregunta de DAM
 // Pregunta 2 DAM
 
@@ -130,6 +132,29 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+class Preferencias(context: Context) {
+
+    private val preferences = context.getSharedPreferences(
+        "app",
+        Context.MODE_PRIVATE
+    )
+
+    fun guardar(prop: String, value: String) {
+        preferences.edit()
+            .putString(prop, value)
+            .apply()
+    }
+
+    fun obtener(prop: String, def: String): String? {
+        return preferences.getString(prop, def)
+    }
+
+    fun remover(prop: String) {
+        preferences.edit()
+            .remove(prop)
+            .apply()
+    }
+}
 
 @Composable
 fun AppContent(modifier: Modifier = Modifier) {
@@ -151,6 +176,16 @@ fun AppContent(modifier: Modifier = Modifier) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AppContentBody(modifier: Modifier = Modifier) {
+    // Revisar si existe una sesión guardada para decidir qué pantalla mostrar.
+    val context = LocalContext.current
+    val preferencias = Preferencias(context)
+
+    val destination = if (!preferencias.obtener("id", "").isNullOrEmpty()) {
+        "MenuContent"
+    } else {
+        "LoginContent"
+    }
+
     val navController = rememberNavController()
 
     // lista de los productos compartida entre el formulario y la lista
@@ -306,7 +341,7 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
         //union de las pestanas
         NavHost(
             navController = navController,
-            startDestination = "MenuContent",
+            startDestination = destination,
             modifier = Modifier.padding(innerPadding)
         ) {
             composable("LoginContent") { LoginContent(navController) }
