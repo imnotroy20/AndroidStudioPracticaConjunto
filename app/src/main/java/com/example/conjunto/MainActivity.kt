@@ -175,6 +175,16 @@ fun AppContent(modifier: Modifier = Modifier) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AppContentBody(modifier: Modifier = Modifier) {
+    // Revisar si existe una sesión guardada para decidir qué pantalla mostrar.
+    val context = LocalContext.current
+    val preferencias = Preferencias(context)
+
+    val destination = if (!preferencias.obtener("id", "").isNullOrEmpty()) {
+        "MenuContent"
+    } else {
+        "LoginContent"
+    }
+
     val navController = rememberNavController()
 
     // lista de los productos compartida entre el formulario y la lista
@@ -330,7 +340,7 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
         //union de las pestanas
         NavHost(
             navController = navController,
-            startDestination = "MenuContent",
+            startDestination = destination,
             modifier = Modifier.padding(innerPadding)
         ) {
             composable("LoginContent") { LoginContent(navController) }
