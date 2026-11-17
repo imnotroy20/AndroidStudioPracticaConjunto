@@ -87,6 +87,8 @@ import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import com.example.conjunto.ui.theme.ConjuntoTheme
 
+import android.content.Context
+
 //Pregunta de DAM
 
 val fuenteUnageo = FontFamily(Font(R.font.unageo_bold))//font
@@ -127,6 +129,29 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+}
+class Preferencias(context: Context) {
+
+    private val preferences = context.getSharedPreferences(
+        "app",
+        Context.MODE_PRIVATE
+    )
+
+    fun guardar(prop: String, value: String) {
+        preferences.edit()
+            .putString(prop, value)
+            .apply()
+    }
+
+    fun obtener(prop: String, def: String): String? {
+        return preferences.getString(prop, def)
+    }
+
+    fun remover(prop: String) {
+        preferences.edit()
+            .remove(prop)
+            .apply()
     }
 }
 
