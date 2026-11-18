@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 import androidx.compose.foundation.shape.CircleShape //forma para el circulo
 import androidx.compose.foundation.shape.RoundedCornerShape //forma con esquinas redondeadas
@@ -60,6 +62,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -97,7 +100,10 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
+import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Query
+import com.google.gson.annotations.SerializedName
 
 //Pregunta de DAM
 // Pregunta 2 DAM
@@ -114,7 +120,9 @@ data class Producto(
     val nombreProducto: String,
     val precio: Double,
     val categoria: String,
-    val proveedor: String = ""
+    val proveedor: String = "",
+    val idProducto: Int = 0,
+    val idProveedor: Int = 0
 )
 
 // data class para representar el empleado
@@ -122,12 +130,24 @@ data class Empleado(
     val nombre: String,
     val puesto: String,
     val sueldo: Double,
-    val sucursal: String = ""
+    val sucursal: String = "",
+    val idEmpleado: Int = 0,
+    val idSucursal: Int = 0
 )
 
 // data class para representar sucursales y proveedores
-data class Sucursal(val nombreSucursal: String, val direccion: String, val telefono: String)
-data class Proveedor(val nombreProveedor: String, val contacto: String, val categoria: String)
+data class Sucursal(
+    val nombreSucursal: String,
+    val direccion: String,
+    val telefono: String,
+    val idSucursal: Int = 0
+)
+data class Proveedor(
+    val nombreProveedor: String,
+    val contacto: String,
+    val categoria: String,
+    val idProveedor: Int = 0
+)
 
 data class ModeloSucursales (val id_sucursal: Int,val nombre_sucursal: String, val direccion: String, val telefono: Int)
 
@@ -201,38 +221,40 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
 
     // lista de los productos compartida entre el formulario y la lista
-    val productos = remember {
-        mutableStateListOf(
-            Producto("Sponch Fresa", 23.0, "Galletas", "Distribuidora Bimbo"),
-            Producto("Emperador Combinado", 22.0, "Galletas", "Distribuidora Bimbo"),
-            Producto("Jugo de Naranja 1L", 35.5, "Bebidas", "Sabritas S.A.")
-        )
-    }
+    val productos = remember { mutableStateListOf<Producto>() }
 
     // lista de los empleados compartida
-    val empleados = remember {
-        mutableStateListOf(
-            Empleado("Juan Pérez", "Gerente", 15000.0, "Sucursal Centro"),
-            Empleado("María López", "Vendedora", 8500.0, "Sucursal Norte")
-        )
-    }
+    val empleados = remember { mutableStateListOf<Empleado>() }
 
     // listas compartidas de sucursales y proveedores
-    val sucursales = remember {
-        mutableStateListOf(
-            Sucursal("Sucursal Centro", "Av. Principal #123", "555-1234"),
-            Sucursal("Sucursal Norte", "Blvd. Norte #456", "555-5678")
-        )
-    }
+    val sucursales = remember { mutableStateListOf<Sucursal>() }
+    val proveedores = remember { mutableStateListOf<Proveedor>() }
 
-    val proveedores = remember {
-        mutableStateListOf(
-            Proveedor("Distribuidora Bimbo", "Carlos Ruiz", "Alimentos"),
-            Proveedor("Sabritas S.A.", "Ana Gómez", "Snacks")
-        )
+    LaunchedEffect(destination) {
+        if (destination == "MenuContent") {
+            try {
+                val productosApi = cargarProductosApi()
+                val empleadosApi = cargarEmpleadosApi()
+                val sucursalesApi = cargarSucursalesApi()
+                val proveedoresApi = cargarProveedoresApi()
+
+                productos.clear()
+                productos.addAll(productosApi)
+                empleados.clear()
+                empleados.addAll(empleadosApi)
+                sucursales.clear()
+                sucursales.addAll(sucursalesApi)
+                proveedores.clear()
+                proveedores.addAll(proveedoresApi)
+            } catch (e: IOException) {
+                Toast.makeText(
+                    context,
+                    "No se pudieron cargar los datos: ${e.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
     }
-//comentario
-    
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: "MenuContent"
@@ -389,6 +411,47 @@ private fun AppContentBody(modifier: Modifier = Modifier) {
 // Enrique Ruiz Comentario 13/10/26
 // Comentario de Comish Practica 4 Roy
 
+data class ApiEnvelope<T>(
+    val success: Boolean,
+    val message: String? = null,
+    val data: T? = null
+)
+
+data class ProveedorApi(
+    @SerializedName("id_proveedor") val id: Int,
+    @SerializedName("nombre_proveedor") val nombre: String,
+    val contacto: String,
+    val categoria: String
+)
+
+data class ProveedorCreado(@SerializedName("id_proveedor") val id: Int)
+
+data class ProductoApi(
+    @SerializedName("id_producto") val id: Int,
+    @SerializedName("nombre_producto") val nombre: String,
+    val precio: Double,
+    val categoria: String,
+    @SerializedName("id_proveedor") val idProveedor: Int,
+    @SerializedName("nombre_proveedor") val nombreProveedor: String
+)
+
+data class EmpleadoApi(
+    @SerializedName("id_empleado") val id: Int,
+    val nombre: String,
+    val puesto: String,
+    val sueldo: Double,
+    val usuario: String,
+    @SerializedName("id_sucursal") val idSucursal: Int,
+    @SerializedName("nombre_sucursal") val nombreSucursal: String
+)
+
+data class SucursalApi(
+    @SerializedName("id_sucursal") val id: Int,
+    @SerializedName("nombre_sucursal") val nombre: String,
+    val direccion: String,
+    val telefono: String
+)
+
 interface ApiService {
     @POST("login.php")
     @FormUrlEncoded
@@ -396,17 +459,148 @@ interface ApiService {
         @Field("usuario") usuario: String,
         @Field("contrasena") contrasena: String
     ): Response<String>
+
+    @GET("productos.php?buscar")
+    suspend fun buscarProductos(@Query("busqueda") busqueda: String = ""): Response<List<ProductoApi>>
+
+    @POST("productos.php?registrar")
+    @FormUrlEncoded
+    suspend fun registrarProducto(
+        @Field("nombre_producto") nombre: String,
+        @Field("precio") precio: Double,
+        @Field("categoria") categoria: String,
+        @Field("id_proveedor") idProveedor: Int
+    ): Response<String>
+
+    @POST("productos.php?eliminar")
+    @FormUrlEncoded
+    suspend fun eliminarProducto(@Field("id") id: Int): Response<String>
+
+    @GET("empleados.php?buscar")
+    suspend fun buscarEmpleados(@Query("busqueda") busqueda: String = ""): Response<List<EmpleadoApi>>
+
+    @POST("empleados.php?registrar")
+    @FormUrlEncoded
+    suspend fun registrarEmpleado(
+        @Field("nombre") nombre: String,
+        @Field("puesto") puesto: String,
+        @Field("sueldo") sueldo: Double,
+        @Field("usuario") usuario: String,
+        @Field("contrasena") contrasena: String,
+        @Field("id_sucursal") idSucursal: Int
+    ): Response<String>
+
+    @POST("empleados.php?eliminar")
+    @FormUrlEncoded
+    suspend fun eliminarEmpleado(@Field("id") id: Int): Response<String>
+
+    @GET("sucursales.php?buscar")
+    suspend fun buscarSucursales(@Query("busqueda") busqueda: String = ""): Response<List<SucursalApi>>
+
+    @POST("sucursales.php?registrar")
+    @FormUrlEncoded
+    suspend fun registrarSucursal(
+        @Field("nombre_sucursal") nombre: String,
+        @Field("direccion") direccion: String,
+        @Field("telefono") telefono: String
+    ): Response<String>
+
+    @POST("sucursales.php?eliminar")
+    @FormUrlEncoded
+    suspend fun eliminarSucursal(@Field("id") id: Int): Response<String>
+
+    @GET("proveedores.php?buscar")
+    suspend fun buscarProveedores(
+        @Query("busqueda") busqueda: String = ""
+    ): Response<ApiEnvelope<List<ProveedorApi>>>
+
+    @POST("proveedores.php?registrar")
+    @FormUrlEncoded
+    suspend fun registrarProveedor(
+        @Field("nombre_proveedor") nombre: String,
+        @Field("contacto") contacto: String,
+        @Field("categoria") categoria: String
+    ): Response<ApiEnvelope<ProveedorCreado>>
+
+    @POST("proveedores.php?eliminar")
+    @FormUrlEncoded
+    suspend fun eliminarProveedor(@Field("id") id: Int): Response<ApiEnvelope<ProveedorCreado>>
 }
 
+private fun <T> Response<T>.cuerpoExitoso(): T {
+    if (!isSuccessful) throw IOException("Error del servidor (HTTP ${code()}).")
+    return body() ?: throw IOException("El servidor devolvió una respuesta vacía.")
+}
+
+private fun <T> Response<ApiEnvelope<T>>.respuestaApi(): ApiEnvelope<T> {
+    val respuesta = cuerpoExitoso()
+    if (!respuesta.success) {
+        throw IOException(respuesta.message ?: "La operación no se pudo completar.")
+    }
+    return respuesta
+}
+
+private fun Response<String>.respuestaOk() {
+    if (cuerpoExitoso().trim() != "ok") {
+        throw IOException("El servidor no confirmó la operación.")
+    }
+}
+
+private fun ProductoApi.aProducto() = Producto(
+    nombreProducto = nombre,
+    precio = precio,
+    categoria = categoria,
+    proveedor = nombreProveedor,
+    idProducto = id,
+    idProveedor = idProveedor
+)
+
+private fun EmpleadoApi.aEmpleado() = Empleado(
+    nombre = nombre,
+    puesto = puesto,
+    sueldo = sueldo,
+    sucursal = nombreSucursal,
+    idEmpleado = id,
+    idSucursal = idSucursal
+)
+
+private fun SucursalApi.aSucursal() = Sucursal(
+    nombreSucursal = nombre,
+    direccion = direccion,
+    telefono = telefono,
+    idSucursal = id
+)
+
+private fun ProveedorApi.aProveedor() = Proveedor(
+    nombreProveedor = nombre,
+    contacto = contacto,
+    categoria = categoria,
+    idProveedor = id
+)
 
 val retrofit = Retrofit.Builder()
-    .baseUrl("https://monitored-pays-archive-asks.trycloudflare.com/api/")
+    .baseUrl("https://product-postcards-worm-jokes.trycloudflare.com/AW/conexconjunto/api/")
     .addConverterFactory(ScalarsConverterFactory.create())
     .addConverterFactory(GsonConverterFactory.create())
     .build()
 
 
 val api = retrofit.create(ApiService::class.java)
+
+private suspend fun cargarProductosApi(): List<Producto> =
+    api.buscarProductos().cuerpoExitoso().map { it.aProducto() }
+
+private suspend fun cargarEmpleadosApi(): List<Empleado> =
+    api.buscarEmpleados().cuerpoExitoso().map { it.aEmpleado() }
+
+private suspend fun cargarSucursalesApi(): List<Sucursal> =
+    api.buscarSucursales().cuerpoExitoso().map { it.aSucursal() }
+
+private suspend fun cargarProveedoresApi(): List<Proveedor> {
+    val proveedoresApi = api.buscarProveedores().respuestaApi().data
+        ?: throw IOException("El servidor no devolvió la lista de proveedores.")
+    return proveedoresApi.map { it.aProveedor() }
+}
 
 
 @Composable
@@ -577,13 +771,16 @@ fun MenuContent(
     modifier: Modifier = Modifier,
     productos: MutableList<Producto> = mutableStateListOf()
 ) {
+    val context = LocalContext.current
+    val preferencias = remember(context) { Preferencias(context) }
     val totalValor = productos.sumOf { it.precio }
 
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(20.dp),
-        verticalArrangement = Arrangement.Center, // arriba o center si lo quiero centrar
+        verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // tarjeta resumen del panel
@@ -784,6 +981,7 @@ fun MenuContent(
         // botón cerrar sesión
         OutlinedCard(
             onClick = {
+                preferencias.remover("id")
                 navController.navigate("LoginContent") {
                     popUpTo("MenuContent") { inclusive = true }
                 }
@@ -825,6 +1023,7 @@ fun FormularioProductosContent(
     proveedores: List<Proveedor> = emptyList()
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var nombreProducto: String by remember { mutableStateOf("") }
     var precio: String by remember { mutableStateOf("") }
     var categoria: String by remember { mutableStateOf("") }
@@ -836,6 +1035,7 @@ fun FormularioProductosContent(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(20.dp),
         verticalArrangement = Arrangement.Top
     ) {
@@ -957,22 +1157,40 @@ fun FormularioProductosContent(
 
                 Button(
                     onClick = {
-                        if (nombreProducto.isNotBlank()) {
-                            val nuevoNombre = nombreProducto.trim()
-                            val nuevoPrecio = precio.toDoubleOrNull() ?: 0.0
-                            val nuevaCat = categoria.ifBlank { "General" }.trim()
-
-                            productos.add(
-                                Producto(
-                                    nombreProducto = nuevoNombre,
-                                    precio = nuevoPrecio,
-                                    categoria = nuevaCat,
-                                    proveedor = proveedorSeleccionado
-                                )
-                            )
-                            Toast.makeText(context, "Producto '$nuevoNombre' guardado", Toast.LENGTH_SHORT).show()
+                        val nuevoPrecio = precio.toDoubleOrNull()
+                        val proveedorElegido = proveedores.firstOrNull {
+                            it.nombreProveedor == proveedorSeleccionado
                         }
-                        navController.navigate("MenuContent")
+                        if (
+                            nombreProducto.isBlank() ||
+                            nuevoPrecio == null ||
+                            nuevoPrecio < 0 ||
+                            categoria.isBlank() ||
+                            proveedorElegido == null
+                        ) {
+                            Toast.makeText(
+                                context,
+                                "Completa los datos y selecciona un proveedor.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            scope.launch {
+                                try {
+                                    api.registrarProducto(
+                                        nombreProducto.trim(),
+                                        nuevoPrecio,
+                                        categoria.trim(),
+                                        proveedorElegido.idProveedor
+                                    ).respuestaOk()
+                                    productos.clear()
+                                    productos.addAll(cargarProductosApi())
+                                    Toast.makeText(context, "Producto guardado", Toast.LENGTH_SHORT).show()
+                                    navController.navigate("MenuContent")
+                                } catch (e: IOException) {
+                                    Toast.makeText(context, e.message, Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        }
                     },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
@@ -997,6 +1215,7 @@ fun ListaProductosContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var busqueda: String by remember { mutableStateOf("") }
 
     val productosFiltrados = productos.filter { producto ->
@@ -1170,8 +1389,15 @@ fun ListaProductosContent(
 
                             IconButton(
                                 onClick = {
-                                    productos.remove(producto)
-                                    Toast.makeText(context, "Producto eliminado", Toast.LENGTH_SHORT).show()
+                                    scope.launch {
+                                        try {
+                                            api.eliminarProducto(producto.idProducto).respuestaOk()
+                                            productos.remove(producto)
+                                            Toast.makeText(context, "Producto eliminado", Toast.LENGTH_SHORT).show()
+                                        } catch (e: IOException) {
+                                            Toast.makeText(context, e.message, Toast.LENGTH_LONG).show()
+                                        }
+                                    }
                                 },
                                 modifier = Modifier
                                     .background(
@@ -1202,6 +1428,7 @@ fun EmpleadosContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var busqueda: String by remember { mutableStateOf("") }
 
     val empleadosFiltrados = empleados.filter { emp ->
@@ -1374,8 +1601,15 @@ fun EmpleadosContent(
 
                             IconButton(
                                 onClick = {
-                                    empleados.remove(emp)
-                                    Toast.makeText(context, "Empleado eliminado", Toast.LENGTH_SHORT).show()
+                                    scope.launch {
+                                        try {
+                                            api.eliminarEmpleado(emp.idEmpleado).respuestaOk()
+                                            empleados.remove(emp)
+                                            Toast.makeText(context, "Empleado eliminado", Toast.LENGTH_SHORT).show()
+                                        } catch (e: IOException) {
+                                            Toast.makeText(context, e.message, Toast.LENGTH_LONG).show()
+                                        }
+                                    }
                                 },
                                 modifier = Modifier
                                     .background(
@@ -1408,9 +1642,12 @@ fun FormularioEmpleadosContent(
     sucursales: List<Sucursal> = emptyList()
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var nombreEmpleado: String by remember { mutableStateOf("") }
     var puesto: String by remember { mutableStateOf("") }
     var sueldo: String by remember { mutableStateOf("") }
+    var usuario: String by remember { mutableStateOf("") }
+    var contrasena: String by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
     var sucursalSeleccionada by remember {
         mutableStateOf(sucursales.firstOrNull()?.nombreSucursal ?: "")
@@ -1419,6 +1656,7 @@ fun FormularioEmpleadosContent(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(20.dp),
         verticalArrangement = Arrangement.Top
     ) {
@@ -1493,6 +1731,29 @@ fun FormularioEmpleadosContent(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
+                OutlinedTextField(
+                    value = usuario,
+                    onValueChange = { usuario = it },
+                    label = { Text("Usuario") },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                OutlinedTextField(
+                    value = contrasena,
+                    onValueChange = { contrasena = it },
+                    label = { Text("Contraseña") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
                 // Combo box de Sucursal
                 ExposedDropdownMenuBox(
                     expanded = expanded,
@@ -1540,22 +1801,44 @@ fun FormularioEmpleadosContent(
 
                 Button(
                     onClick = {
-                        if (nombreEmpleado.isNotBlank()) {
-                            val nuevoNombre = nombreEmpleado.trim()
-                            val nuevoPuesto = puesto.ifBlank { "General" }.trim()
-                            val nuevoSueldo = sueldo.toDoubleOrNull() ?: 0.0
-
-                            empleados.add(
-                                Empleado(
-                                    nombre = nuevoNombre,
-                                    puesto = nuevoPuesto,
-                                    sueldo = nuevoSueldo,
-                                    sucursal = sucursalSeleccionada
-                                )
-                            )
-                            Toast.makeText(context, "Empleado '$nuevoNombre' guardado", Toast.LENGTH_SHORT).show()
+                        val nuevoSueldo = sueldo.toDoubleOrNull()
+                        val sucursalElegida = sucursales.firstOrNull {
+                            it.nombreSucursal == sucursalSeleccionada
                         }
-                        navController.navigate("MenuContent")
+                        if (
+                            nombreEmpleado.isBlank() ||
+                            puesto.isBlank() ||
+                            nuevoSueldo == null ||
+                            nuevoSueldo < 0 ||
+                            usuario.isBlank() ||
+                            contrasena.isBlank() ||
+                            sucursalElegida == null
+                        ) {
+                            Toast.makeText(
+                                context,
+                                "Completa todos los campos y selecciona una sucursal.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            scope.launch {
+                                try {
+                                    api.registrarEmpleado(
+                                        nombreEmpleado.trim(),
+                                        puesto.trim(),
+                                        nuevoSueldo,
+                                        usuario.trim(),
+                                        contrasena,
+                                        sucursalElegida.idSucursal
+                                    ).respuestaOk()
+                                    empleados.clear()
+                                    empleados.addAll(cargarEmpleadosApi())
+                                    Toast.makeText(context, "Empleado guardado", Toast.LENGTH_SHORT).show()
+                                    navController.navigate("MenuContent")
+                                } catch (e: IOException) {
+                                    Toast.makeText(context, e.message, Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        }
                     },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
@@ -1580,6 +1863,7 @@ fun SucursalesContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var busqueda: String by remember { mutableStateOf("") }
 
     val sucursalesFiltradas = sucursales.filter { suc ->
@@ -1719,8 +2003,15 @@ fun SucursalesContent(
 
                             IconButton(
                                 onClick = {
-                                    sucursales.remove(suc)
-                                    Toast.makeText(context, "Sucursal eliminada", Toast.LENGTH_SHORT).show()
+                                    scope.launch {
+                                        try {
+                                            api.eliminarSucursal(suc.idSucursal).respuestaOk()
+                                            sucursales.remove(suc)
+                                            Toast.makeText(context, "Sucursal eliminada", Toast.LENGTH_SHORT).show()
+                                        } catch (e: IOException) {
+                                            Toast.makeText(context, e.message, Toast.LENGTH_LONG).show()
+                                        }
+                                    }
                                 },
                                 modifier = Modifier
                                     .background(
@@ -1751,6 +2042,7 @@ fun FormularioSucursalesContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var nombreSucursal: String by remember { mutableStateOf("") }
     var direccion: String by remember { mutableStateOf("") }
     var telefono: String by remember { mutableStateOf("") }
@@ -1758,6 +2050,7 @@ fun FormularioSucursalesContent(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(20.dp),
         verticalArrangement = Arrangement.Top
     ) {
@@ -1834,21 +2127,29 @@ fun FormularioSucursalesContent(
 
                 Button(
                     onClick = {
-                        if (nombreSucursal.isNotBlank()) {
-                            val nuevoNombre = nombreSucursal.trim()
-                            val nuevaDir = direccion.ifBlank { "Sin dirección" }.trim()
-                            val nuevoTel = telefono.ifBlank { "Sin teléfono" }.trim()
-
-                            sucursales.add(
-                                Sucursal(
-                                    nombreSucursal = nuevoNombre,
-                                    direccion = nuevaDir,
-                                    telefono = nuevoTel
-                                )
-                            )
-                            Toast.makeText(context, "Sucursal '$nuevoNombre' guardada", Toast.LENGTH_SHORT).show()
+                        if (
+                            nombreSucursal.isBlank() ||
+                            direccion.isBlank() ||
+                            telefono.isBlank()
+                        ) {
+                            Toast.makeText(context, "Completa todos los campos.", Toast.LENGTH_SHORT).show()
+                        } else {
+                            scope.launch {
+                                try {
+                                    api.registrarSucursal(
+                                        nombreSucursal.trim(),
+                                        direccion.trim(),
+                                        telefono.trim()
+                                    ).respuestaOk()
+                                    sucursales.clear()
+                                    sucursales.addAll(cargarSucursalesApi())
+                                    Toast.makeText(context, "Sucursal guardada", Toast.LENGTH_SHORT).show()
+                                    navController.navigate("MenuContent")
+                                } catch (e: IOException) {
+                                    Toast.makeText(context, e.message, Toast.LENGTH_LONG).show()
+                                }
+                            }
                         }
-                        navController.navigate("MenuContent")
                     },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
@@ -1871,6 +2172,7 @@ fun ProveedoresContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var busqueda: String by remember { mutableStateOf("") }
 
     val proveedoresFiltrados = proveedores.filter { prov ->
@@ -2017,8 +2319,15 @@ fun ProveedoresContent(
 
                             IconButton(
                                 onClick = {
-                                    proveedores.remove(prov)
-                                    Toast.makeText(context, "Proveedor eliminado", Toast.LENGTH_SHORT).show()
+                                    scope.launch {
+                                        try {
+                                            api.eliminarProveedor(prov.idProveedor).respuestaApi()
+                                            proveedores.remove(prov)
+                                            Toast.makeText(context, "Proveedor eliminado", Toast.LENGTH_SHORT).show()
+                                        } catch (e: IOException) {
+                                            Toast.makeText(context, e.message, Toast.LENGTH_LONG).show()
+                                        }
+                                    }
                                 },
                                 modifier = Modifier
                                     .background(
@@ -2049,6 +2358,7 @@ fun FormularioProveedoresContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var nombreProveedor: String by remember { mutableStateOf("") }
     var contacto: String by remember { mutableStateOf("") }
     var categoria: String by remember { mutableStateOf("") }
@@ -2056,6 +2366,7 @@ fun FormularioProveedoresContent(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(20.dp),
         verticalArrangement = Arrangement.Top
     ) {
@@ -2132,21 +2443,29 @@ fun FormularioProveedoresContent(
 
                 Button(
                     onClick = {
-                        if (nombreProveedor.isNotBlank()) {
-                            val nuevoNombre = nombreProveedor.trim()
-                            val nuevoContacto = contacto.ifBlank { "Sin contacto" }.trim()
-                            val nuevaCat = categoria.ifBlank { "General" }.trim()
-
-                            proveedores.add(
-                                Proveedor(
-                                    nombreProveedor = nuevoNombre,
-                                    contacto = nuevoContacto,
-                                    categoria = nuevaCat
-                                )
-                            )
-                            Toast.makeText(context, "Proveedor '$nuevoNombre' guardado", Toast.LENGTH_SHORT).show()
+                        if (
+                            nombreProveedor.isBlank() ||
+                            contacto.isBlank() ||
+                            categoria.isBlank()
+                        ) {
+                            Toast.makeText(context, "Completa todos los campos.", Toast.LENGTH_SHORT).show()
+                        } else {
+                            scope.launch {
+                                try {
+                                    api.registrarProveedor(
+                                        nombreProveedor.trim(),
+                                        contacto.trim(),
+                                        categoria.trim()
+                                    ).respuestaApi()
+                                    proveedores.clear()
+                                    proveedores.addAll(cargarProveedoresApi())
+                                    Toast.makeText(context, "Proveedor guardado", Toast.LENGTH_SHORT).show()
+                                    navController.navigate("MenuContent")
+                                } catch (e: IOException) {
+                                    Toast.makeText(context, e.message, Toast.LENGTH_LONG).show()
+                                }
+                            }
                         }
-                        navController.navigate("MenuContent")
                     },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
