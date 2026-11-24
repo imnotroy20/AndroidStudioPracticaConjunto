@@ -400,7 +400,7 @@ interface ApiService {
 
 
 val retrofit = Retrofit.Builder()
-    .baseUrl("https://receiving-way-taught-economic.trycloudflare.com")
+    .baseUrl("https://whole-tips-voice-unsigned.trycloudflare.com/AW/conexconjunto/api/")
     .addConverterFactory(ScalarsConverterFactory.create())
     .addConverterFactory(GsonConverterFactory.create())
     .build()
